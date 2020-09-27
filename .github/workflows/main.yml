@@ -2,7 +2,7 @@ name: Autobuild 😎
 
 on:
   pull_request: {}
-  push: { branches: [master, develop, martin/feat/ci] }
+  push: { branches: [main] }
   release: { types: [published] }
 
 env:
