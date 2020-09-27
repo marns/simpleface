@@ -1,0 +1,68 @@
+name: Autobuild 😎
+
+on:
+  pull_request: {}
+  push: { branches: [master, develop, martin/feat/ci] }
+  release: { types: [published] }
+
+env:
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+jobs:
+  build:
+    name: Build my project ✨
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          lfs: true
+
+      # Cache
+      - uses: actions/cache@v2.1.1
+        with:
+          path: Library
+          key: Library
+
+      # Build
+      - name: Build project
+        uses: webbertakken/unity-builder@v1.2
+        with:
+          unityVersion: 2020.1.5f1
+          targetPlatform: iOS
+
+      # Output
+      - uses: actions/upload-artifact@v2.1.4
+        with:
+          name: Build
+          path: build
+
+  build-ipa:
+    name: Build IPA
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - uses: maxim-lobanov/setup-xcode@v1.1
+        with:
+          xcode-version: latest-stable
+
+      - name: Download xcodeproj
+        uses: actions/download-artifact@v2.0.5
+        with:
+          name: Build
+
+      - name: Display structure of downloaded files
+        run: ls -R
+
+      - name: Build IPA
+        #uses: yukiarrr/ios-build-action@master
+        uses: gpiffaretti/ios-build-action@master
+        with:
+          project-path: iOS/iOS/Unity-iPhone.xcodeproj
+          p12-base64: ${{ secrets.P12_BASE64 }}
+          mobileprovision-base64: ${{ secrets.MOBILEPROVISION_BASE64 }}
+          code-signing-identity: ${{ secrets.CODE_SIGNING_IDENTITY }}
+          team-id: ${{ secrets.TEAM_ID }}
+          #disable-targets: "Unity-iPhone"
+          #workspace-path: Unity-iPhone.xcworkspace # optional
